@@ -14,27 +14,44 @@ require 'rubygems'
 require 'opennebula'
 include OpenNebula
 class Core
-	attr_reader :oneClient
-	def initialize()
-		CREDENTIALS = "oneuser:onepass"
-		ENDPOINT = "http://localhost:2633/RPC2"
+	attr_reader :oneClient, :conf;
+	def initialize(credentials, endpoint)
 
-		@oneClient = Client.new(CREDENTIALS, ENDPOINT)
+		@oneClient = Client.new(credential, endpoint)
+
+		lines_vector = File.readlines("/etc/NebulaVisum/nv.conf")
+		@conf = {}
+		lines_vector.each do |line|
+			key,value = line.split(':=')
+			@conf[key] = value
+		end
 	end
 
 	def availableSoft(string)
-		parsed = JSON.parse(string);
+		parsed = JSON.parse(string)
 	
 		response = '{"softDisponiveis":'
-		#ATRIBUI STATUS
+		if(@conf.length > 0)
+			status = "OK"
+		else
+			status = "ERR_UNAVAILABLE_SOFTWARES"
+		end
+
 		response += '{"status":' + status
-		#PEGA SOFTWARES
+		softwares = '['
+
+		@conf.each_pair do |key, value|
+			softwares += '"'+key+'"'
+			softwares += ','
+		end
+
+		softwares[softwares.length-1] = ']'
 		response += ', "softwares":' + softwares + '}'
 		response += '}'
 	end
 
 	def createTemplate(string)
-		parsed = JSON.parse(string);
+		parsed = JSON.parse(string)
 		#CRIA TEMPLATE COM BASE NO PARSE
 		#SE PRIMEIRO ACESSO
 			#CRIA VN E A ASSOCIA AO USUARIO
@@ -42,6 +59,13 @@ class Core
 			#PEGA VN DO USUARIO
 	
 		#CRIA A IMAGEM
+		system('mount_image.sh ' + usuario)
+		
+		softwares.each do |software|
+			system('chroot /mnt/'+usuario+' '+ @conf[software])
+		end
+		system('umount_image.sh ' + usuario)
+		
 		#CRIA TEMPLATE
 	
 		response = '{"criarTemplate":'
@@ -51,7 +75,7 @@ class Core
 	end
 
 	def createVM(string)
-		parsed = JSON.parse(string);
+		parsed = JSON.parse(string)
 		#CRIA VM COM BASE NO PARSE
 
 		response = '{"criarVM":'
@@ -61,7 +85,7 @@ class Core
 		end
 
 	def infoVM(string)
-		parsed = JSON.parse(string);
+		parsed = JSON.parse(string)
 		#OBTEM INFORMACOES DA VM COM BASE NO PARSE
 	
 		response = '{"infoVM":'
@@ -81,7 +105,7 @@ class Core
 	end
 
 	def myVMs(string)
-		parsed = JSON.parse(string);
+		parsed = JSON.parse(string)
 		#OBTEM NOMES DAS VMS DADO USUARIO
 	
 		response = '{"minhasVMs":'
@@ -91,7 +115,7 @@ class Core
 	end
 
 	def myTemplates(string)
-		parsed = JSON.parse(string);
+		parsed = JSON.parse(string)
 		#OBTEM NOMES DOS TEMPLATES DADO USUARIO
 	
 		response = '{"meusTemplates":'

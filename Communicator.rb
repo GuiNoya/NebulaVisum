@@ -2,10 +2,11 @@ require 'socket'
 require 'json'
 require 'rubygems'
 class Communicator
-	attr_reader :port;
+	attr_reader :port, :core;
 
 	def initialize(port = 2000)
 		@port = port;
+		@core = Core.new("oneuser:onepass","http://localhost:2633/RPC2")
 	end
 
 	def start()
@@ -16,17 +17,17 @@ class Communicator
 			parsed = JSON.parse(string)
 			parsed.each_pair do |key, value|
 				if(key == "softDisponiveis")
-					response = availableSoft(value);
+					response = core.availableSoft(value);
 				elsif(key == "criarTemplate")
-					response = createTemplate(value);
+					response = core.createTemplate(value);
 				elsif(key == "criarVM")
-					response = createVM(value);
+					response = core.createVM(value);
 				elsif(key == "infoVM")
-					response = infoVM(value);
+					response = core.infoVM(value);
 				elsif(key == "minhasVMs")
-					response = myVMs(value);
+					response = core.myVMs(value);
 				elsif(key == "meusTemplates")
-					response = myTemplates(value);
+					response = core.myTemplates(value);
 				end
 				client.puts response
 			end
