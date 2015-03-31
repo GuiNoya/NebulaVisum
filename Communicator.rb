@@ -29,7 +29,7 @@ class Communicator
 	end
 end
 
-# Verificar se está rodando como root
+raise "Must run as root!" unless Process.uid == 0
 
 communicator = Communicator.new
 communicator.start
