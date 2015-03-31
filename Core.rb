@@ -41,7 +41,7 @@ class Core
 		end
 
 		response += '{"status":' + status
-		softwares = '['
+		softwares = '[ '
 
 		@conf.each_pair do |key, value|
 			softwares += '"'+ key +'"'
@@ -55,11 +55,13 @@ class Core
 
 	def createTemplate(hash)
 		#CRIA TEMPLATE COM BASE NO PARSE
-		#SE PRIMEIRO ACESSO
+
+		rs = DataBase.getData("UserId, NetworkID","Users","UserId = "+hash[userId])
+		if(rs.length == 0)
 			#CRIA VN E A ASSOCIA AO USUARIO
-		#SENÃO
+		else
 			#PEGA VN DO USUARIO
-	
+		end
 		#CRIA A IMAGEM
 		
 		# Precisa verificar por erros de execução nos comandos
@@ -107,7 +109,16 @@ class Core
 	end
 
 	def myVMs(hash)
-		#OBTEM NOMES DAS VMS DADO USUARIO
+		where = "Users.UserName = " + "'"+hash[userId]+"'"
+		where += " AND Users.UserId = VMs.UserId"
+		rs = DataBase.getData("VMs.Name","Users, VMs",where)
+
+		vms = "[ "
+		rs.each do |row|
+			vms += "'"+row["VMs.Name"]+"'"
+			vms += ","
+		end
+		vms[vms.length-1] = "]"
 	
 		response = '{"myVMs":'
 		response += '{"status":' + status
@@ -116,7 +127,18 @@ class Core
 	end
 
 	def myTemplates(hash)
-		#OBTEM NOMES DOS TEMPLATES DADO USUARIO
+		where = "Users.UserName = " + "'"+hash[userId]+"'"
+		where += " AND Users.UserId = Templates.UserId"
+		rs = DataBase.getData("Templates.Name","Users, Templates",where)
+
+		templates = "[ "
+		rs.each do |row|
+			templates += "'"+row["Templates.Name"]+"'"
+			templates += ","
+		end
+		templates[templates.length-1] = "]"
+
+		#TRATAR STATUS
 	
 		response = '{"myTemplates":'
 		response += '{"templates":' + templates
