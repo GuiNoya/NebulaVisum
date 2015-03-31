@@ -56,24 +56,25 @@ class Core
 	def createTemplate(hash)
 		#CRIA TEMPLATE COM BASE NO PARSE
 
-		rs = DataBase.getData("UserId, NetworkID","Users","UserId = "+hash[userId])
+		rs = DataBase.getData("UserId, NetworkID","Users","UserName = "+hash["userId"])
 		if(rs.length == 0)
-			#CRIA VN E A ASSOCIA AO USUARIO
+			#networkId = CRIA VN E PEGA ID
+			DataBase.insertUser(networkId.to_s,hash["userId"])
 		else
-			#PEGA VN DO USUARIO
+			#networkId = PEGAR VN NO rs
 		end
 		#CRIA A IMAGEM
 		
 		# Precisa verificar por erros de execução nos comandos
 		system('mount_image.sh ' + user)
 		
-		softwares.each do |software|
+		hash["softwares"].each do |software|
 			system('chroot /mnt/'+ user +' '+ @conf[software])
 		end
 		system('umount_image.sh ' + user)
 		
 		#CRIA TEMPLATE
-	
+
 		response = '{"createTemplate":'
 		response += '{"templateId":' + name
 		response += ', "status":' + status + '}'
@@ -82,6 +83,7 @@ class Core
 
 	def createVM(hash)
 		#CRIA VM COM BASE NO PARSE
+
 
 		response = '{"createVM":'
 		response += '{"VMs":' + vms
@@ -109,7 +111,7 @@ class Core
 	end
 
 	def myVMs(hash)
-		where = "Users.UserName = " + "'"+hash[userId]+"'"
+		where = "Users.UserName = " + "'"+hash["userId"]+"'"
 		where += " AND Users.UserId = VMs.UserId"
 		rs = DataBase.getData("VMs.Name","Users, VMs",where)
 
@@ -127,7 +129,7 @@ class Core
 	end
 
 	def myTemplates(hash)
-		where = "Users.UserName = " + "'"+hash[userId]+"'"
+		where = "Users.UserName = " + "'"+hash["userId"]+"'"
 		where += " AND Users.UserId = Templates.UserId"
 		rs = DataBase.getData("Templates.Name","Users, Templates",where)
 

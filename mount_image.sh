@@ -1,7 +1,7 @@
 #!/bin/sh
 #$1 --> nome da nova imagem
 
-cp original_img $1.img
+cp original_img.img $1.img
 mkdir /mnt/$1
 mount -t auto -o loop,offset=$((2048*512)) $1.img /mnt/$1/
 mount -o bind /proc /mnt/$1/proc
