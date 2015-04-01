@@ -58,15 +58,15 @@ class Core
 
 		rs = DataBase.getData("UserId, NetworkID","Users","UserName = "+user)
 		if(rs.length == 0)
-			template_vn = <<-BLOCK
-				NAME = 
+			template_vn = "NAME = "+user+"\n"
+			template_vn += <<-BLOCK
 				TYPE = RANGED
 				BRIDGE = vbr0
-				NETWORK_SIZE = 
-				NETWORK_ADDRESS = 
-				GATEWAY = 
-				DNS = 
-				LOAD_BALANCER = 
+				NETWORK_SIZE = C
+				NETWORK_ADDRESS = 192.168.0.0
+				GATEWAY = 192.168.0.1
+				DNS = 192.168.0.1
+				LOAD_BALANCER = 192.168.0.3
 			BLOCK
 			xml_vn = OpenNebula::VirtualNetwork.build_xml
 			vn = OpenNebula::VirtualNetwork.new(xml_vn, @oneClient)
@@ -80,30 +80,51 @@ class Core
 		else
 			vn_id = rs.first["NetworkId"]
 		end
-		#CRIA A IMAGEM
 		
 		# Precisa verificar por erros de execução nos comandos
-		system('mount_image.sh ' + user)
-		system('mkdir -p /mnt/'+user+'/etc/NebulaVisum')
+		imageId = DataBase.addImage(user)
+		system('mount_image.sh ' + user + imageId.to_s)
+		system('mkdir -p /mnt/'+user+ imageId.to_s+'/etc/NebulaVisum')
 		hash["softwares"].each do |software|
 			s = @conf[software].split('/')
-			system('cp '+@conf[software]+' /mnt/'+ user + '/etc/NebulaVisum/'+s.last)
-			system('chroot /mnt/'+ user +' /etc/NebulaVisum/'+s.last)
+			system('cp '+@conf[software]+' /mnt/'+user+imageId.to_s+ '/etc/NebulaVisum/'+s.last)
+			system('chroot /mnt/'+ user + imageId.to_s +' /etc/NebulaVisum/'+s.last)
 		end
-		system('umount_image.sh ' + user)
+		system('umount_image.sh ' + user + imageId.to_s)
 		
+		#CRIA IMAGEM
+
+		template_img = <<-BLOCK
+			NAME = 
+			PATH = 
+		BLOCK
+
+		xml_img = OpenNebula::Image.build_xml
+		img = OpenNebula::Image.new(xml_img, @oneClient)
+		rc_img = img.allocate(template_img)
+
+		if OpenNebula.is_error?(rc_img)
+			status = "ERR_CREATE_IMAGE"
+
 		#CRIA TEMPLATE
 		template = <<-BLOCK
-			
+			NAME = 
+			MEMORY = 
+			CPU = 
+			ARCH = 
+			NIC = 
+			IMAGE = 
 		BLOCK
+
 		xml_template = OpenNebula::Template.build_xml
 		tempalte = OpenNebula::Templatenew(xml_template, @oneClient)
 		rc_template = template.allocate(template)
-		name = ""
+		name = " "
 		if OpenNebula.is_error?(rc_vn)
 			status = "ERR_CREATE_TEMPLATE"
+			DataBase.delImage(user)
 		else
-			name = user+'_'+rc_template.id.to_s
+			name = user+'_'+imageId.to_s
 			DataBase.insertTemplate(user+rc_template.id.to_s,name)
 			status = "OK"
 		end

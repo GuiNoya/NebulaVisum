@@ -48,4 +48,19 @@ class DataBase
 		rs = stmt.execute
 		return rs
 	end
+
+	def DataBase.addImage(userName)
+		rs = DataBase.getData("UserId, ImgCount","Users","Name = "+userName)
+		i = rs.first["ImgCount"]+1
+		string = "UPDATE Users SET ImgCount = "+ i.to_s + " WHERE Name = "+userName
+		@@db.execute(string)
+		return 
+	end
+
+	def DataBase.delImage(userName)
+		rs = DataBase.getData("UserId, ImgCount","Users","Name = "+userName)
+		i = rs.first["ImgCount"]-1
+		string = "UPDATE Users SET ImgCount = "+ i.to_s + " WHERE Name = "+userName
+		@@db.execute(string)
+	end
 end
