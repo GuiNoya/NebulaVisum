@@ -67,9 +67,11 @@ class Core
 		
 		# Precisa verificar por erros de execução nos comandos
 		system('mount_image.sh ' + user)
-		
+		system('mkdir -p /mnt/'+user+'/etc/NebulaVisum')
 		hash["softwares"].each do |software|
-			system('chroot /mnt/'+ user +' '+ @conf[software])
+			s = @conf[software].split('/')
+			system('cp '+@conf[software]+' /mnt/'+ user + '/etc/NebulaVisum/'+s.last)
+			system('chroot /mnt/'+ user +' /etc/NebulaVisum/'+s.last)
 		end
 		system('umount_image.sh ' + user)
 		
