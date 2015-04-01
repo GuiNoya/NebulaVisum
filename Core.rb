@@ -117,7 +117,7 @@ class Core
 		BLOCK
 
 		xml_template = OpenNebula::Template.build_xml
-		tempalte = OpenNebula::Template.new(xml_template, @oneClient)
+		template = OpenNebula::Template.new(xml_template, @oneClient)
 		rc_template = template.allocate(template)
 		name = " "
 		if OpenNebula.is_error?(rc_vn)
