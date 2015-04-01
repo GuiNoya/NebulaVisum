@@ -117,7 +117,7 @@ class Core
 		BLOCK
 
 		xml_template = OpenNebula::Template.build_xml
-		tempalte = OpenNebula::Templatenew(xml_template, @oneClient)
+		tempalte = OpenNebula::Template.new(xml_template, @oneClient)
 		rc_template = template.allocate(template)
 		name = " "
 		if OpenNebula.is_error?(rc_vn)
@@ -136,9 +136,39 @@ class Core
 	end
 
 	def createVM(hash)
-		#CRIA VM COM BASE NO PARSE
-
-
+		
+		rs = DataBase.getData("TemplateId, UserId, NebulaId, Name", "Templates", "Name = " + hash["templateId"])
+		vms = []
+		
+		if (rs.length == 1)
+			rs.each do |row|
+				templateId = row["TemplateId"]
+				userId = row["UserId"]
+				nebulaId = row["NebulaId"]
+				templateName = row["Name"]
+			end
+			
+			xml = OpenNebula::Template.build_xml(nebulaId)
+			template = OpenNebula::Template.new(xml, @oneClient)
+			
+			qty = hash["qty"]
+			
+			status = "OK"
+			for i in 1..qty
+				vmId = template.instantiate
+				if (OpenNebula.is_error?(vmId))
+					status = "ERR_COULD_NOT_INSTANTIATE"
+					break
+				else
+					vms << vmId
+					DataBase.insertVm(userId, templateId, vmId, templateName + "_" + vmId)
+				end
+			end
+			
+		else
+			status = "ERR_INVALID_TEMPLATE"
+		end
+		
 		response = '{"createVM":'
 		response += '{"VMs":' + vms
 		response += ', "status":' + status + '}'
