@@ -54,11 +54,12 @@ class Core
 	end
 
 	def createTemplate(hash)
+	
 		user = hash["userId"]
-
-		rs = DataBase.getData("UserId, NetworkID","Users","UserName = "+user)
-		if(rs.length == 0)
-			template_vn = "NAME = "+user+"\n"
+		rs = DataBase.getData("UserId, NetworkID", "Users", "UserName = " + user)
+		
+		if (rs.length == 0)
+			template_vn = "NAME = " + user + "\n"
 			template_vn += <<-BLOCK
 				TYPE = RANGED
 				BRIDGE = vbr0
@@ -72,10 +73,12 @@ class Core
 			vn = OpenNebula::VirtualNetwork.new(xml_vn, @oneClient)
 			vn_id = vn.id
 			rc_vn = vn.allocate(template_vn)
-			if OpenNebula.is_error?(rc_vn)
+			if (OpenNebula.is_error?(rc_vn))
 				status = "ERR_CREATE_VN"
+				response = '{"createTemplate": {"templateId": "", "status": "' + status + '"}}'
+				return response
 			else
-				DataBase.insertUser(vn.id.to_s,user)
+				DataBase.insertUser(vn.id.to_s, user)
 			end
 		else
 			vn_id = rs.first["NetworkId"]
@@ -84,11 +87,11 @@ class Core
 		# Precisa verificar por erros de execução nos comandos
 		imageId = DataBase.addImage(user)
 		system('mount_image.sh ' + user + imageId.to_s)
-		system('mkdir -p /mnt/'+user+ imageId.to_s+'/etc/NebulaVisum')
+		system('mkdir -p /mnt/' + user + imageId.to_s + '/etc/NebulaVisum')
 		hash["softwares"].each do |software|
 			s = @conf[software].split('/')
-			system('cp '+@conf[software]+' /mnt/'+user+imageId.to_s+ '/etc/NebulaVisum/'+s.last)
-			system('chroot /mnt/'+ user + imageId.to_s +' /etc/NebulaVisum/'+s.last)
+			system('cp ' + @conf[software] + ' /mnt/' + user + imageId.to_s + '/etc/NebulaVisum/' + s.last)
+			system('chroot /mnt/' + user + imageId.to_s + ' /etc/NebulaVisum/' + s.last)
 		end
 		system('umount_image.sh ' + user + imageId.to_s)
 		
@@ -103,8 +106,11 @@ class Core
 		img = OpenNebula::Image.new(xml_img, @oneClient)
 		rc_img = img.allocate(template_img)
 
-		if OpenNebula.is_error?(rc_img)
+		if (OpenNebula.is_error?(rc_img))
 			status = "ERR_CREATE_IMAGE"
+			response = '{"createTemplate": {"templateId": "", "status": "' + status + '"}}'
+			return response
+		end
 
 		#CRIA TEMPLATE
 		template = <<-BLOCK
@@ -119,13 +125,13 @@ class Core
 		xml_template = OpenNebula::Template.build_xml
 		template = OpenNebula::Template.new(xml_template, @oneClient)
 		rc_template = template.allocate(template)
-		name = " "
+		name = '""'
 		if OpenNebula.is_error?(rc_vn)
 			status = "ERR_CREATE_TEMPLATE"
 			DataBase.delImage(user)
 		else
-			name = user+'_'+imageId.to_s
-			DataBase.insertTemplate(user+rc_template.id.to_s,name)
+			name = user + '_' + imageId.to_s
+			DataBase.insertTemplate(user + rc_template.id.to_s, name)
 			status = "OK"
 		end
 
@@ -173,10 +179,11 @@ class Core
 		response += '{"VMs":' + vms
 		response += ', "status":' + status + '}'
 		response += '}'
-		end
+	end
 
 	def infoVM(hash)
-		#OBTEM INFORMACOES DA VM COM BASE NO PARSE
+		
+		status = "OK"
 	
 		response = '{"infoVM":'
 		response += '{"status":' + status
@@ -195,13 +202,13 @@ class Core
 	end
 
 	def myVMs(hash)
-		where = "Users.UserName = " + "'"+hash["userId"]+"'"
+		where = "Users.UserName = " + "'" + hash["userId"] + "'"
 		where += " AND Users.UserId = VMs.UserId"
-		rs = DataBase.getData("VMs.Name","Users, VMs",where)
+		rs = DataBase.getData("VMs.Name", "Users, VMs", where)
 
 		vms = "[ "
 		rs.each do |row|
-			vms += "'"+row["VMs.Name"]+"'"
+			vms += "'" + row["VMs.Name"] + "'"
 			vms += ","
 		end
 		vms[vms.length-1] = "]"
@@ -213,13 +220,13 @@ class Core
 	end
 
 	def myTemplates(hash)
-		where = "Users.UserName = " + "'"+hash["userId"]+"'"
+		where = "Users.UserName = " + "'" + hash["userId"] + "'"
 		where += " AND Users.UserId = Templates.UserId"
-		rs = DataBase.getData("Templates.Name","Users, Templates",where)
+		rs = DataBase.getData("Templates.Name", "Users, Templates", where)
 
 		templates = "[ "
 		rs.each do |row|
-			templates += "'"+row["Templates.Name"]+"'"
+			templates += "'" + row["Templates.Name"] + "'"
 			templates += ","
 		end
 		templates[templates.length-1] = "]"

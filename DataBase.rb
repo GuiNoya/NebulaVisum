@@ -1,7 +1,9 @@
 require 'sqlite3'
 
 class DataBase
+
 	attr_reader :db
+	
 	def initialize()
 	end
 
@@ -13,54 +15,54 @@ class DataBase
 	end
 
 	def DataBase.insertUser(networkId, name)
-		string = "INSERT INTO Users VALUES(NULL,"+networkId+",'"+name+"',0)"
+		string = "INSERT INTO Users VALUES(NULL," + networkId + ",'" + name + "',0)"
 		@@db.execute(string)
 	end
 
 	def DataBase.removeUser(userId)
-		string = "DELETE FROM Users WHERE UserId = "+userId
+		string = "DELETE FROM Users WHERE UserId = " + userId
 		@@db.execute(string)
 	end
 
 	def DataBase.insertTemplate(userId, nebulaId, name)
-		string = "INSERT INTO Templates VALUES(NULL,"+userId+","+nebulaId+",'"+name+"')"
+		string = "INSERT INTO Templates VALUES(NULL," + userId + "," + nebulaId + ",'" + name + "')"
 		@@db.execute(string)
 	end
 
 	def DataBase.removeTemplate(templateId)
-		string = "DELETE FROM Templates WHERE TemplateId = "+templateId
+		string = "DELETE FROM Templates WHERE TemplateId = " + templateId
 		@@db.execute(string)
 	end
 
 	def DataBase.insertVm(userId, templateId, nebulaId, name)
-		string = "INSERT INTO VMs VALUES(NULL,"+userId+","+templateId+","+nebulaId+",'"+name+"')"
+		string = "INSERT INTO VMs VALUES(NULL," + userId + "," + templateId + "," + nebulaId + ",'" + name + "')"
 		@@db.execute(string)
 	end
 
 	def DataBase.removeVm(vmId)
-		string = "DELETE FROM VMs WHERE VMId = "+vmid
+		string = "DELETE FROM VMs WHERE VMId = " + vmid
 		@@db.execute(string)
 	end
 
-	def DataBase.getData(select,from,where = '1')
-		string = "SELECT "+select+" FROM "+from+" WHERE "+where
+	def DataBase.getData(select, from, where = '1')
+		string = "SELECT " + select + " FROM " + from + " WHERE " + where
 		stmt = @@db.prepare(string)
 		rs = stmt.execute
 		return rs
 	end
 
 	def DataBase.addImage(userName)
-		rs = DataBase.getData("UserId, ImgCount","Users","Name = "+userName)
-		i = rs.first["ImgCount"]+1
-		string = "UPDATE Users SET ImgCount = "+ i.to_s + " WHERE Name = "+userName
+		rs = DataBase.getData("UserId, ImgCount","Users","Name = " + userName)
+		i = rs.first["ImgCount"] + 1
+		string = "UPDATE Users SET ImgCount = " + i.to_s + " WHERE Name = " + userName
 		@@db.execute(string)
 		return 
 	end
 
 	def DataBase.delImage(userName)
-		rs = DataBase.getData("UserId, ImgCount","Users","Name = "+userName)
-		i = rs.first["ImgCount"]-1
-		string = "UPDATE Users SET ImgCount = "+ i.to_s + " WHERE Name = "+userName
+		rs = DataBase.getData("UserId, ImgCount","Users","Name = " + userName)
+		i = rs.first["ImgCount"] - 1
+		string = "UPDATE Users SET ImgCount = " + i.to_s + " WHERE Name = " + userName
 		@@db.execute(string)
 	end
 end
