@@ -54,14 +54,31 @@ class Core
 	end
 
 	def createTemplate(hash)
-		#CRIA TEMPLATE COM BASE NO PARSE
+		user = hash["userId"]
 
-		rs = DataBase.getData("UserId, NetworkID","Users","UserName = "+hash["userId"])
+		rs = DataBase.getData("UserId, NetworkID","Users","UserName = "+user)
 		if(rs.length == 0)
-			#networkId = CRIA VN E PEGA ID
-			DataBase.insertUser(networkId.to_s,hash["userId"])
+			template_vn = <<-BLOCK
+				NAME = 
+				TYPE = RANGED
+				BRIDGE = vbr0
+				NETWORK_SIZE = 
+				NETWORK_ADDRESS = 
+				GATEWAY = 
+				DNS = 
+				LOAD_BALANCER = 
+			BLOCK
+			xml_vn = OpenNebula::VirtualNetwork.build_xml
+			vn = OpenNebula::VirtualNetwork.new(xml_vn, @oneClient)
+			vn_id = vn.id
+			rc_vn = vn.allocate(template_vn)
+			if OpenNebula.is_error?(rc_vn)
+				status = "ERR_CREATE_VN"
+			else
+				DataBase.insertUser(vn.id.to_s,user)
+			end
 		else
-			#networkId = PEGAR VN NO rs
+			vn_id = rs.first["NetworkId"]
 		end
 		#CRIA A IMAGEM
 		
@@ -76,6 +93,20 @@ class Core
 		system('umount_image.sh ' + user)
 		
 		#CRIA TEMPLATE
+		template = <<-BLOCK
+			
+		BLOCK
+		xml_template = OpenNebula::Template.build_xml
+		tempalte = OpenNebula::Templatenew(xml_template, @oneClient)
+		rc_template = template.allocate(template)
+		name = ""
+		if OpenNebula.is_error?(rc_vn)
+			status = "ERR_CREATE_TEMPLATE"
+		else
+			name = user+'_'+rc_template.id.to_s
+			DataBase.insertTemplate(user+rc_template.id.to_s,name)
+			status = "OK"
+		end
 
 		response = '{"createTemplate":'
 		response += '{"templateId":' + name
