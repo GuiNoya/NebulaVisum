@@ -131,7 +131,7 @@ class Core
 			DataBase.delImage(user)
 		else
 			name = user + '_' + imageId.to_s
-			DataBase.insertTemplate(user + rc_template.id.to_s, name)
+			DataBase.insertTemplate(user + rc_template.id.to_s, name, hash["softwares"])
 			status = "OK"
 		end
 
@@ -183,8 +183,20 @@ class Core
 
 	def infoVM(hash)
 		
+		rs = DataBase.getData("s.Software, t.NebulaId", "Softwares s, VMs v, Templates t", "v.VMId = " + hash["VMId"] + " AND v.TemplateId = s.TemplateId AND t.TemplateId = v.TemplateId")
+		templateId = rs.first['t.NebulaId']
+		softwares = "[ "
+		rs.each do |row|
+			softwares += '"' + row["s.Software"] + '",'
+		end
+		softwares[softwares.length-1] = "]"
+		
+		xml = OpenNebula::Template.build_xml(templateId)
+		template = OpenNebula::Template.new(xml, @oneClient)
+		info = template.info
+		
 		status = "OK"
-	
+		# Pegar infos do template
 		response = '{"infoVM":'
 		response += '{"status":' + status
 		#INFO FISICAS
