@@ -1,10 +1,10 @@
 # Environment Configuration
-ONE_LOCATION=ENV["ONE_LOCATION"]
+ONE_LOCATION = ENV["ONE_LOCATION"]
 
-if !ONE_LOCATION
-	RUBY_LIB_LOCATION="usr/lib/one/ruby"
+if (!ONE_LOCATION)
+	RUBY_LIB_LOCATION = "/usr/lib/one/ruby"
 else
-	RUBY_LIB_LOCATION=ONE_LOCATION+"/lib/ruby"
+	RUBY_LIB_LOCATION = ONE_LOCATION + "/lib/ruby"
 end
 
 $: << RUBY_LIB_LOCATION
@@ -183,26 +183,48 @@ class Core
 
 	def infoVM(hash)
 		
-		rs = DataBase.getData("s.Software, t.NebulaId", "Softwares s, VMs v, Templates t", "v.VMId = " + hash["VMId"] + " AND v.TemplateId = s.TemplateId AND t.TemplateId = v.TemplateId")
-		templateId = rs.first['t.NebulaId']
+		rs = DataBase.getData("s.Software", "Softwares s, VMs v", "v.VMId = " + hash["VMId"] + " AND v.TemplateId = s.TemplateId")
 		softwares = "[ "
 		rs.each do |row|
 			softwares += '"' + row["s.Software"] + '",'
 		end
 		softwares[softwares.length-1] = "]"
 		
-		xml = OpenNebula::Template.build_xml(templateId)
-		template = OpenNebula::Template.new(xml, @oneClient)
-		info = template.info
+		xml = OpenNebula::VirtualMachine.build_xml(hash["VMId"])
+		vm = OpenNebula::VirtualMachine.new(xml, @oneClient)
+		vm.info # Returns nilClass if succeeded
+		info = vm.to_hash["VM"]
 		
 		status = "OK"
-		# Pegar infos do template
+		statusVM = vm.state_str
+		hd = info["TEMPLATE"]["DISK"]["SIZE"]
+		mem = info["TEMPLATE"]["MEMORY"]
+		cpu = info["TEMPLATE"]["CPU"]
+		ip = info["TEMPLATE"]["NIC"]["IP"]
+		mask = info["TEMPLATE"]["CONTEXT"]["ETH0_MASK"]
+		network = info["TEMPLATE"]["CONTEXT"]["ETH0_NETWORK"]
+		mask_octets = mask.split('.').map(&:to_i)
+		net_octets = network.split('.').map(&:to_i)
+		broadcast = []
+		broadcast << 7.downto(0).map{|n| (a[0] | ~b[0])[n]}.join.to_i(2)
+		broadcast << 7.downto(0).map{|n| (a[1] | ~b[1])[n]}.join.to_i(2)
+		broadcast << 7.downto(0).map{|n| (a[2] | ~b[2])[n]}.join.to_i(2)
+		broadcast << 7.downto(0).map{|n| (a[3] | ~b[3])[n]}.join.to_i(2)
+		broadcast = broadcast.join(".")
+		
+		xml = OpenNebula::VirtualNetwork.build_xml(info["TEMPLATE"]["NIC"]["NETWORK_ID"])
+		vm = OpenNebula::VirtualNetwork.new(xml, @oneClient)
+		vm.info # Returns nilClass if succeeded
+		info = vm.to_hash["VNET"]
+		gateway = info["GATEWAY"]
+		
 		response = '{"infoVM":'
 		response += '{"status":' + status
+		response += '{"statusVM:"' + statusVM # vm.status | vm.state_str
 		#INFO FISICAS
 		response += ', "hd":' + hd
-		response += ', "mem":' + mem
-		response += ', "cpu":' + cpu
+		response += ', "mem":' + mem #vm -> template -> memory (max) | vm -> memory (in use)
+		response += ', "cpu":' + cpu #vm -> template -> cpu (max) | vm -> cpu (in use)
 		#INFO REDE
 		response += ', "ip":' + ip
 		response += ', "mask":' + mask

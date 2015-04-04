@@ -1,5 +1,5 @@
 #!/bin/sh
-#$1 --> nome da nova imagem
+#$1 --> new image name
 
 cp original_img.img $1.img
 mkdir /mnt/$1

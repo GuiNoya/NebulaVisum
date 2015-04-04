@@ -1,5 +1,5 @@
 #!/bin/sh
-#$1 --> nome da imagem
+#$1 --> image name
 
 umount /mnt/$1/sys
 umount /mnt/$1/dev/pts
