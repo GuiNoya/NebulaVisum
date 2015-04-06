@@ -22,6 +22,7 @@ class Core
 	def initialize(credential, endpoint)
 
 		@oneClient = Client.new(credential, endpoint)
+		DataBase.open("/etc/NebulaVisum/nv.db")
 
 		lines_vector = File.readlines("/etc/NebulaVisum/nv.conf")
 		@conf = {}
