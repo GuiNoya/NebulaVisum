@@ -13,6 +13,8 @@ require 'json'
 require 'rubygems'
 require 'opennebula'
 
+require_relative 'DataBase'
+
 include OpenNebula
 
 class Core
@@ -44,7 +46,7 @@ class Core
 		response += '{"status":' + status
 		softwares = '[ '
 
-		@conf.each_pair do |key, value|
+		@conf.each_pair do |key, _|
 			softwares += '"'+ key +'"'
 			softwares += ','
 		end
@@ -161,7 +163,7 @@ class Core
 			qty = hash["qty"]
 			
 			status = "OK"
-			for i in 1..qty
+			for _ in 1..qty
 				vmId = template.instantiate
 				if (OpenNebula.is_error?(vmId))
 					status = "ERR_COULD_NOT_INSTANTIATE"
@@ -207,10 +209,10 @@ class Core
 		mask_octets = mask.split('.').map(&:to_i)
 		net_octets = network.split('.').map(&:to_i)
 		broadcast = []
-		broadcast << 7.downto(0).map{|n| (a[0] | ~b[0])[n]}.join.to_i(2)
-		broadcast << 7.downto(0).map{|n| (a[1] | ~b[1])[n]}.join.to_i(2)
-		broadcast << 7.downto(0).map{|n| (a[2] | ~b[2])[n]}.join.to_i(2)
-		broadcast << 7.downto(0).map{|n| (a[3] | ~b[3])[n]}.join.to_i(2)
+		broadcast << 7.downto(0).map{|n| (net_octets[0] | ~mask_octets[0])[n]}.join.to_i(2)
+		broadcast << 7.downto(0).map{|n| (net_octets[1] | ~mask_octets[1])[n]}.join.to_i(2)
+		broadcast << 7.downto(0).map{|n| (net_octets[2] | ~mask_octets[2])[n]}.join.to_i(2)
+		broadcast << 7.downto(0).map{|n| (net_octets[3] | ~mask_octets[3])[n]}.join.to_i(2)
 		broadcast = broadcast.join(".")
 		
 		xml = OpenNebula::VirtualNetwork.build_xml(info["TEMPLATE"]["NIC"]["NETWORK_ID"])
@@ -241,6 +243,8 @@ class Core
 		where += " AND Users.UserId = VMs.UserId"
 		rs = DataBase.getData("VMs.Name", "Users, VMs", where)
 
+		status = "OK"
+
 		vms = "[ "
 		rs.each do |row|
 			vms += "'" + row["VMs.Name"] + "'"
@@ -258,6 +262,8 @@ class Core
 		where = "Users.UserName = " + "'" + hash["userId"] + "'"
 		where += " AND Users.UserId = Templates.UserId"
 		rs = DataBase.getData("Templates.Name", "Users, Templates", where)
+
+		status = "OK"
 
 		templates = "[ "
 		rs.each do |row|

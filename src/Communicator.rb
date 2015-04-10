@@ -4,6 +4,8 @@ require 'socket'
 require 'json'
 require 'rubygems'
 
+require_relative 'Core'
+
 class Communicator
 
 	attr_reader :port, :core;

@@ -46,7 +46,7 @@ class DataBase
 	end
 
 	def DataBase.removeVm(vmId)
-		string = "DELETE FROM VMs WHERE VMId = " + vmid
+		string = "DELETE FROM VMs WHERE VMId = " + vmId
 		@@db.execute(string)
 	end
 
