@@ -15,13 +15,13 @@ class Client:
 		return data
 
 	def avblSoft(self, status):
-		request = '{"avblSoft":{"status":'+status+'}}\n'
+		request = '{"avblSoft":{"status":"'+status+'"}}\n'
 		return self.send(request)
 
 	def createTemplate(self, hd, cpu, mem, softwares, user):
 		request = '{"createTemplate":{"hd":'+hd+\
 		', "cpu":'+cpu+', "mem":'+mem+\
-		', "softwares": '+str(softwares)+\
+		', "softwares": "'+str(softwares)+'"'+\
 		', "userId": '+user+'}}\n'
 		return self.send(request)
 
@@ -45,5 +45,5 @@ class Client:
 
 	def actionVM(self, VMId, action):
 		request = '{"actionVM":{"VMId":'+VMId+\
-		', "action":'+action+'}}\n'
+		', "action":"'+action+'"}}\n'
 		return self.send(request)
