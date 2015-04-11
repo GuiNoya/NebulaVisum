@@ -26,12 +26,24 @@ class Client:
 		return self.send(request)
 
 	def createVM(self, templateId, qty):
+		request = '{"createVM":{"templateId":'+templateId+\
+		', "qty":'+qty+'}}\n'
+		return self.send(request)
 
 	def infoVM(self, VMId):
+		request = '{"infoVM":{"VMId":'+VMId+'}}\n'
+		return self.send(request)
 
 	def myVMs(self, userId):
+		request = '{"myMVs":{"userId":'+userId+'}}\n'
+		return self.send(request)
 
 	def myTemplates(self, userId):
+		request = '{"mytemplates":{"userId":'+userId+'}}\n'
+		return self.send(request)
+
 
 	def actionVM(self, VMId, action):
-
+		request = '{"actionVM":{"VMId":'+VMId+\
+		', "action":'+action+'}}\n'
+		return self.send(request)
