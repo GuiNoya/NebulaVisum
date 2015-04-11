@@ -186,14 +186,15 @@ class Core
 
 	def infoVM(hash)
 		
-		rs = DataBase.getData("s.Software", "Softwares s, VMs v", "v.VMId = " + hash["VMId"] + " AND v.TemplateId = s.TemplateId")
+		rs = DataBase.getData("s.Software, v.NebulaId", "Softwares s, VMs v", "v.VMId = " + hash["VMId"] + " AND v.TemplateId = s.TemplateId")
+		vmId = rs.first["v.NebulaId"]
 		softwares = "[ "
 		rs.each do |row|
 			softwares += '"' + row["s.Software"] + '",'
 		end
 		softwares[softwares.length-1] = "]"
 		
-		xml = OpenNebula::VirtualMachine.build_xml(hash["VMId"])
+		xml = OpenNebula::VirtualMachine.build_xml(vmId)
 		vm = OpenNebula::VirtualMachine.new(xml, @oneClient)
 		vm.info # Returns nilClass if succeeded
 		info = vm.to_hash["VM"]
@@ -279,4 +280,28 @@ class Core
 		response += ', "status":' + status + '}'
 		response += '}'
 	end
+	
+	def actionVM(hash)
+		rs = DataBase.getData("NebulaId", "VMs", "VMId = " + hash["VMId"])
+		vmId = rs.first["NebulaId"]
+		
+		xml = OpenNebula::VirtualMachine.build_xml(vmId)
+		vm = OpenNebula::VirtualMachine.new(xml, @oneClient)
+		
+		rc_vm = case hash["action"]
+			when "resume" then vm.resume
+			when "stop" then vm.stop
+			when "shutdown" then vm.shutdown
+			when "delete" then vm.delete
+			else "ERR_INVALID_OPERATION"
+		
+		if (OpenNebula.is_error?(rc_vm))
+			status = rc_vm.to_str
+		elsif (rc_vm == "")
+			status = rc_vm
+		else
+			status = "OK"
+		end
+		
+		response = '{"actionVM": {"status": ' + status + '}}'
 end
