@@ -43,7 +43,7 @@ class Core
 			status = "ERR_UNAVAILABLE_SOFTWARES"
 		end
 
-		response += '{"status":' + status
+		response += '{"status":"' + status + '",'
 		softwares = '[ '
 
 		@conf.each_pair do |key, _|
@@ -52,7 +52,7 @@ class Core
 		end
 
 		softwares[softwares.length-1] = ']'
-		response += ', "softwares":' + softwares + '}'
+		response += ', "softwares":' + softwares.to_s + '}'
 		response += '}'
 	end
 
@@ -139,8 +139,8 @@ class Core
 		end
 
 		response = '{"createTemplate":'
-		response += '{"templateId":' + name
-		response += ', "status":' + status + '}'
+		response += '{"templateId":"' + name '"'
+		response += ', "status":"' + status + '"}'
 		response += '}'
 	end
 
@@ -179,8 +179,8 @@ class Core
 		end
 		
 		response = '{"createVM":'
-		response += '{"VMs":' + vms
-		response += ', "status":' + status + '}'
+		response += '{"VMs":' + vms.to_s
+		response += ', "status":"' + status + '"}'
 		response += '}'
 	end
 
@@ -223,19 +223,19 @@ class Core
 		gateway = info["GATEWAY"]
 		
 		response = '{"infoVM":'
-		response += '{"status":' + status
-		response += '{"statusVM:"' + statusVM # vm.status | vm.state_str
+		response += '{"status":"' + status + '"'
+		response += '{"statusVM:"' + statusVM + '"' # vm.status | vm.state_str
 		#INFO FISICAS
-		response += ', "hd":' + hd
-		response += ', "mem":' + mem #vm -> template -> memory (max) | vm -> memory (in use)
-		response += ', "cpu":' + cpu #vm -> template -> cpu (max) | vm -> cpu (in use)
+		response += ', "hd":' + hd.to_s
+		response += ', "mem":' + mem.to_s #vm -> template -> memory (max) | vm -> memory (in use)
+		response += ', "cpu":' + cpu.to_s #vm -> template -> cpu (max) | vm -> cpu (in use)
 		#INFO REDE
-		response += ', "ip":' + ip
-		response += ', "mask":' + mask
-		response += ', "broadcast":' + broadcast
-		response += ', "gateway":' + gateway
+		response += ', "ip":"' + ip + '"'
+		response += ', "mask":"' + mask + '"'
+		response += ', "broadcast":"' + broadcast + '"'
+		response += ', "gateway":"' + gateway + '"'
 		#INFO SOFTWARES
-		response += ', "softwares":' + softwares + '}'
+		response += ', "softwares":' + softwares.to_s + '}'
 		response += '}'
 	end
 
@@ -254,8 +254,8 @@ class Core
 		vms[vms.length-1] = "]"
 	
 		response = '{"myVMs":'
-		response += '{"status":' + status
-		response += ', "VMs":' + vms + '}'
+		response += '{"status":"' + status + '"'
+		response += ', "VMs":' + vms.to_s + '}'
 		response += '}'
 	end
 
@@ -276,8 +276,8 @@ class Core
 		#TRATAR STATUS
 	
 		response = '{"myTemplates":'
-		response += '{"templates":' + templates
-		response += ', "status":' + status + '}'
+		response += '{"templates":' + templates.to_s
+		response += ', "status":"' + status + '"}'
 		response += '}'
 	end
 	
@@ -303,5 +303,5 @@ class Core
 			status = "OK"
 		end
 		
-		response = '{"actionVM": {"status": ' + status + '}}'
+		response = '{"actionVM": {"status": "' + status + '"}}'
 end
