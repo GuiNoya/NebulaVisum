@@ -139,7 +139,7 @@ class Core
 		end
 
 		response = '{"createTemplate":'
-		response += '{"templateId":"' + name '"'
+		response += '{"templateId":"' + name + '"'
 		response += ', "status":"' + status + '"}'
 		response += '}'
 	end
@@ -294,6 +294,7 @@ class Core
 			when "shutdown" then vm.shutdown
 			when "delete" then vm.delete
 			else "ERR_INVALID_OPERATION"
+		end
 		
 		if (OpenNebula.is_error?(rc_vm))
 			status = rc_vm.to_str
@@ -304,4 +305,5 @@ class Core
 		end
 		
 		response = '{"actionVM": {"status": "' + status + '"}}'
+	end
 end
