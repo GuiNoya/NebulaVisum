@@ -20,7 +20,13 @@ class Communicator
 		loop do
 			Thread.start(server.accept) do |client|
 				string = client.gets.chomp
-				parsed = JSON.parse(string)
+				begin
+					parsed = JSON.parse(string)
+				rescue
+					client.puts("ERR_INVALID_JSON")
+					client.close
+					Thread.exit
+				end
 				parsed.each_pair do |key, value|
 					response = eval("core." + key + "(value)")
 					client.puts(response)
