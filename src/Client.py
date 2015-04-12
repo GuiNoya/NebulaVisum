@@ -9,8 +9,12 @@ class Client:
     def send(self, request):
         self.s.connect((self.host, self.port))
         self.s.sendall(request)
-        data = self.s.recv(4096)
-        data = data.rstrip('\n')
+        data = ""
+        while 1:
+            data_temp = self.s.recv(4096)
+            if not data_temp: break
+            data_temp = data.rstrip('\n')
+            data += data_temp
         self.s.close()
         return data
 
