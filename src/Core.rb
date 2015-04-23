@@ -65,12 +65,11 @@ class Core
 			template_vn = "NAME = " + user + "\n"
 			template_vn += <<-BLOCK
 				TYPE = RANGED
-				BRIDGE = vbr0
+				BRIDGE = br1
 				NETWORK_SIZE = C
 				NETWORK_ADDRESS = 192.168.0.0
 				GATEWAY = 192.168.0.1
-				DNS = 192.168.0.1
-				LOAD_BALANCER = 192.168.0.3
+				DNS = 8.8.8.8
 			BLOCK
 			xml_vn = OpenNebula::VirtualNetwork.build_xml
 			vn = OpenNebula::VirtualNetwork.new(xml_vn, @oneClient)
@@ -90,7 +89,7 @@ class Core
 		# Precisa verificar por erros de execução nos comandos
 		imageId = DataBase.addImage(user)
 		system('mount_image.sh ' + user + imageId.to_s)
-		system('mkdir -p /mnt/' + user + imageId.to_s + '/etc/NebulaVisum')
+		system('mkdir -p /mnt/' + user + imageId.to_s)
 		hash["softwares"].each do |software|
 			s = @conf[software].split('/')
 			system('cp ' + @conf[software] + ' /mnt/' + user + imageId.to_s + '/etc/NebulaVisum/' + s.last)
@@ -100,14 +99,12 @@ class Core
 		
 		#CRIA IMAGEM
 
-		template_img = <<-BLOCK
-			NAME = 
-			PATH = 
-		BLOCK
+		template_img = "NAME = " + user + imgId.to_s + "\n"
+		template_img += "PATH = /etc/NebulaVisum/images/" + user + imgId.to_s + ".img"
 
 		xml_img = OpenNebula::Image.build_xml
 		img = OpenNebula::Image.new(xml_img, @oneClient)
-		rc_img = img.allocate(template_img)
+		rc_img = img.allocate(template_img, 100)
 
 		if (OpenNebula.is_error?(rc_img))
 			status = "ERR_CREATE_IMAGE"
@@ -116,14 +113,12 @@ class Core
 		end
 
 		#CRIA TEMPLATE
-		template = <<-BLOCK
-			NAME = 
-			MEMORY = 
-			CPU = 
-			ARCH = 
-			NIC = 
-			IMAGE = 
-		BLOCK
+		template = "NAME = \"" + user + imgId.to_s + "\"\n"
+		template += "MEMORY = \"" + hash["mem"] + "\"\n"
+		template += "CPU = \"" + hash["cpu"] + "\"\n"
+		template += "ARCH = \"x86_64\" \n"
+		template += "NIC = [ NETWORK_ID = \"" + vn_id + "\" ]\n"
+		template += "IMAGE = [ IMAGE_ID = \"" + img.id + "\" ]\n"
 
 		xml_template = OpenNebula::Template.build_xml
 		template = OpenNebula::Template.new(xml_template, @oneClient)
