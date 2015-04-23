@@ -9,12 +9,13 @@ class Client:
     def send(self, request):
         self.s.connect((self.host, self.port))
         self.s.sendall(request)
-        data = ""
-        while 1:
-            data_temp = self.s.recv(4096)
-            if not data_temp: break
-            data_temp = data.rstrip('\n')
-            data += data_temp
+        #data = ""
+        #while 1:
+        #    data_temp = self.s.recv(4096)
+        #    if not data_temp: break
+        #    data_temp = data.rstrip('\n')
+        #    data += data_temp
+        data = self.s.recv(4096)
         self.s.close()
         return data
 
@@ -25,7 +26,7 @@ class Client:
     def createTemplate(self, hd, cpu, mem, softwares, user):
         request = '{"createTemplate":{"hd":' + str(hd) + \
             ', "cpu":' + str(cpu) + ', "mem":' + str(mem) + \
-            ', "softwares": ' + str(softwares) + \
+            ', "softwares": ' + str(softwares).replace("'", "\"") + \
             ', "userId": "' + str(user) + '"}}\n'
         return self.send(request)
 

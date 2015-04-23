@@ -52,7 +52,7 @@ class Core
 		end
 
 		softwares[softwares.length-1] = ']'
-		response += ', "softwares":' + softwares.to_s + '}'
+		response += ' "softwares":' + softwares.to_s + '}'
 		response += '}'
 	end
 
