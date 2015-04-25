@@ -59,9 +59,9 @@ class Core
 	def createTemplate(hash)
 	
 		user = hash["userId"]
-		rs = DataBase.getData("UserId, NetworkID", "Users", "UserName = " + user)
+		rs = DataBase.getData("UserId, NetworkId", "Users", "Name = \"" + user + "\"")
 		
-		if (rs.length == 0)
+		if (rs.first == nil)
 			template_vn = "NAME = " + user + "\n"
 			template_vn += <<-BLOCK
 				TYPE = RANGED
@@ -141,10 +141,10 @@ class Core
 
 	def createVM(hash)
 		
-		rs = DataBase.getData("TemplateId, UserId, NebulaId, Name", "Templates", "Name = " + hash["templateId"])
+		rs = DataBase.getData("TemplateId, UserId, NebulaId, Name", "Templates", "Name = \"" + hash["templateId"] + '"')
 		vms = []
 		
-		if (rs.length == 1)
+		if (rs.first)
 			rs.each do |row|
 				templateId = row["TemplateId"]
 				userId = row["UserId"]
@@ -181,7 +181,7 @@ class Core
 
 	def infoVM(hash)
 		
-		rs = DataBase.getData("s.Software, v.NebulaId", "Softwares s, VMs v", "v.VMId = " + hash["VMId"] + " AND v.TemplateId = s.TemplateId")
+		rs = DataBase.getData("s.Software, v.NebulaId", "Softwares s, VMs v", "v.VMId = \"" + hash["VMId"] + "\" AND v.TemplateId = s.TemplateId")
 		vmId = rs.first["v.NebulaId"]
 		softwares = "[ "
 		rs.each do |row|
@@ -235,7 +235,7 @@ class Core
 	end
 
 	def myVMs(hash)
-		where = "Users.UserName = " + "'" + hash["userId"] + "'"
+		where = "Users.Name = \"" + hash["userId"] + '"'
 		where += " AND Users.UserId = VMs.UserId"
 		rs = DataBase.getData("VMs.Name", "Users, VMs", where)
 
@@ -255,7 +255,7 @@ class Core
 	end
 
 	def myTemplates(hash)
-		where = "Users.UserName = " + "'" + hash["userId"] + "'"
+		where = "Users.Name = \"" + hash["userId"] + '"'
 		where += " AND Users.UserId = Templates.UserId"
 		rs = DataBase.getData("Templates.Name", "Users, Templates", where)
 
@@ -277,7 +277,7 @@ class Core
 	end
 	
 	def actionVM(hash)
-		rs = DataBase.getData("NebulaId", "VMs", "VMId = " + hash["VMId"])
+		rs = DataBase.getData("NebulaId", "VMs", "VMId = \"" + hash["VMId"] + '"')
 		vmId = rs.first["NebulaId"]
 		
 		xml = OpenNebula::VirtualMachine.build_xml(vmId)
