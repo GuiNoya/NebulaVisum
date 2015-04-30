@@ -9,6 +9,7 @@ class DataBase
 
 	def DataBase.open(path)
 		@@db = SQLite3::Database.open(path)
+		@@db.results_as_hash = true
 		@@db.execute("CREATE TABLE IF NOT EXISTS Users(UserId INTEGER PRIMARY KEY, NetworkId INTEGER, Name TEXT UNIQUE, ImgCount INTEGER)")
 		@@db.execute("CREATE TABLE IF NOT EXISTS Templates(TemplateId INTEGER PRIMARY KEY, UserId INTEGER, NebulaId INTEGER, Name TEXT UNIQUE, FOREIGN KEY(UserId) REFERENCES Users(UserId))")
 		@@db.execute("CREATE TABLE IF NOT EXISTS VMs(VMId INTEGER PRIMARY KEY, UserId INTEGER, TemplateId INTEGER, NebulaId INTEGER, Name TEXT UNIQUE, FOREIGN KEY(UserId) REFERENCES Users(UserId), FOREIGN KEY(TemplateId) REFERENCES Templates(TemplateId))")
@@ -26,9 +27,9 @@ class DataBase
 	end
 
 	def DataBase.insertTemplate(userId, nebulaId, name, softwares)
-		string = "INSERT INTO Templates VALUES(NULL," + userId + "," + nebulaId + ",'" + name + "')"
+		string = "INSERT INTO Templates VALUES(NULL," + userId.to_s + "," + nebulaId.to_s + ",'" + name.to_s + "')"
 		@@db.execute(string)
-		rs = DataBase.getData("TemplateId", "Templates", "name = " + name)
+		rs = DataBase.getData("TemplateId", "Templates", "name = '" + name.to_s + "'")
 		templateId = rs.first["TemplateId"]
 		softwares.each do |software|
 			DataBase.insertSoftware(templateId, software)
@@ -51,7 +52,7 @@ class DataBase
 	end
 
 	def DataBase.insertSoftware(templateId, software)
-		string = "INSERT INTO Softwares VALUES(NULL, " + templateId + "," + software + ")"
+		string = "INSERT INTO Softwares VALUES(NULL, " + templateId.to_s + ",'" + software.to_s + "')"
 		@@db.execute(string)
 	end
 
@@ -68,17 +69,18 @@ class DataBase
 	end
 
 	def DataBase.addImage(userName)
-		rs = DataBase.getData("UserId, ImgCount","Users","Name = " + userName)
+		rs = DataBase.getData("UserId, ImgCount","Users","Name = '" + userName + "'")
 		i = rs.first["ImgCount"] + 1
-		string = "UPDATE Users SET ImgCount = " + i.to_s + " WHERE Name = " + userName
+		string = "UPDATE Users SET ImgCount = " + i.to_s + " WHERE Name = '" + userName + "'"
 		@@db.execute(string)
-		return 
+		return i
 	end
 
 	def DataBase.delImage(userName)
-		rs = DataBase.getData("UserId, ImgCount","Users","Name = " + userName)
+		rs = DataBase.getData("UserId, ImgCount","Users","Name = '" + userName + "'")
 		i = rs.first["ImgCount"] - 1
-		string = "UPDATE Users SET ImgCount = " + i.to_s + " WHERE Name = " + userName
+		string = "UPDATE Users SET ImgCount = " + i.to_s + " WHERE Name = '" + userName + "'"
+		puts string
 		@@db.execute(string)
 	end
 end

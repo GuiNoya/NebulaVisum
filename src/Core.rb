@@ -30,7 +30,7 @@ class Core
 		@conf = {}
 		lines_vector.each do |line|
 			key, value = line.split(":=")
-			@conf[key] = value
+			@conf[key] = value.chomp
 		end
 	end
 
@@ -57,50 +57,62 @@ class Core
 	end
 
 	def createTemplate(hash)
-	
+		puts("Checking user...")
 		user = hash["userId"]
 		rs = DataBase.getData("UserId, NetworkId", "Users", "Name = \"" + user + "\"")
 		
 		if (rs.first == nil)
+			puts("Creating user...")
 			template_vn = "NAME = " + user + "\n"
 			template_vn += <<-BLOCK
-				TYPE = RANGED
-				BRIDGE = br1
-				NETWORK_SIZE = C
-				NETWORK_ADDRESS = 192.168.0.0
-				GATEWAY = 192.168.0.1
-				DNS = 8.8.8.8
+			TYPE = RANGED
+			BRIDGE = br1
+			NETWORK_SIZE = C
+			NETWORK_ADDRESS = 192.168.0.0
+			GATEWAY = 192.168.0.1
+			DNS = 8.8.8.8
 			BLOCK
+			puts(template_vn)
 			xml_vn = OpenNebula::VirtualNetwork.build_xml
 			vn = OpenNebula::VirtualNetwork.new(xml_vn, @oneClient)
-			vn_id = vn.id
 			rc_vn = vn.allocate(template_vn)
+			vn_id = vn.id
+
 			if (OpenNebula.is_error?(rc_vn))
+				puts(rc_vn.errno)
+				puts(rc_vn.message)
 				status = "ERR_CREATE_VN"
 				response = '{"createTemplate": {"templateId": "", "status": "' + status + '"}}'
 				return response
 			else
 				DataBase.insertUser(vn.id.to_s, user)
 			end
+			user_id = getData("UserId", "Users", "Name = \"" + user + "\"").first["UserId"]
+			puts("Created user...")
 		else
 			vn_id = rs.first["NetworkId"]
+			user_id = rs.first["UserId"]
 		end
-		
+		puts("Criando imagem DB..")
 		# Precisa verificar por erros de execução nos comandos
 		imageId = DataBase.addImage(user)
-		system('mount_image.sh ' + user + imageId.to_s)
-		system('mkdir -p /mnt/' + user + imageId.to_s)
+		puts("Copiando/montando imagem...")
+		system('./mount_image.sh ' + user + '_' + imageId.to_s)
+		#system('mkdir -p /mnt/' + user + '_' + imageId.to_s)
+		puts("Instalando Softwares..")
 		hash["softwares"].each do |software|
 			s = @conf[software].split('/')
-			system('cp ' + @conf[software] + ' /mnt/' + user + imageId.to_s + '/etc/NebulaVisum/' + s.last)
-			system('chroot /mnt/' + user + imageId.to_s + ' /etc/NebulaVisum/' + s.last)
+			system('cp ' + @conf[software] + ' /mnt/' + user + "_" + imageId.to_s + '/etc/NebulaVisum/' + s.last)
+			system('chmod 777 /mnt/' + user + "_" + imageId.to_s + '/etc/NebulaVisum/' + s.last)
+			system('chroot /mnt/' + user + "_" + imageId.to_s + ' bash /etc/NebulaVisum/' + s.last)
 		end
-		system('umount_image.sh ' + user + imageId.to_s)
+		puts("Desmontando Softwares..")
+		system('./umount_image.sh ' + user + "_" + imageId.to_s)
 		
 		#CRIA IMAGEM
-
-		template_img = "NAME = " + user + imgId.to_s + "\n"
-		template_img += "PATH = /etc/NebulaVisum/images/" + user + imgId.to_s + ".img"
+		puts("Criando imagem ONE..")
+		template_img = "NAME = " + user + "_" + imageId.to_s + "\n"
+		template_img += "PATH = /etc/NebulaVisum/images/" + user + "_" + imageId.to_s + ".img"
 
 		xml_img = OpenNebula::Image.build_xml
 		img = OpenNebula::Image.new(xml_img, @oneClient)
@@ -113,23 +125,34 @@ class Core
 		end
 
 		#CRIA TEMPLATE
-		template = "NAME = \"" + user + imgId.to_s + "\"\n"
-		template += "MEMORY = \"" + hash["mem"] + "\"\n"
-		template += "CPU = \"" + hash["cpu"] + "\"\n"
+		puts("Criando template ONE..")
+		template = "NAME = \"" + user + "_" + imageId.to_s + "\"\n"
+		template += "MEMORY = \"" + hash["mem"].to_s + "\"\n"
+		template += "CPU = \"" + hash["cpu"].to_s + "\"\n"
 		template += "ARCH = \"x86_64\" \n"
-		template += "NIC = [ NETWORK_ID = \"" + vn_id + "\" ]\n"
-		template += "IMAGE = [ IMAGE_ID = \"" + img.id + "\" ]\n"
-
+		template += "NIC = [ NETWORK_ID = \"" + vn_id.to_s + "\" ]\n"
+		template += "IMAGE = [ IMAGE_ID = \"" + img.id.to_s + "\" ]\n"
+		
+		puts template
+		
 		xml_template = OpenNebula::Template.build_xml
+		puts 1
 		template = OpenNebula::Template.new(xml_template, @oneClient)
+		puts 2
 		rc_template = template.allocate(template)
+		puts 3
 		name = '""'
 		if OpenNebula.is_error?(rc_vn)
 			status = "ERR_CREATE_TEMPLATE"
+			puts 4
 			DataBase.delImage(user)
+			puts 5
 		else
+			puts 6
 			name = user + '_' + imageId.to_s
-			DataBase.insertTemplate(user + rc_template.id.to_s, name, hash["softwares"])
+		puts 7
+			DataBase.insertTemplate(user_id, rc_template.id, name, hash["softwares"])
+		puts 8
 			status = "OK"
 		end
 

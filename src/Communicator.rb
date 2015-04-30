@@ -12,7 +12,7 @@ class Communicator
 
 	def initialize(port = 2000)
 		@port = port;
-		@core = Core.new("oneuser:onepass", "http://localhost:2633/RPC2")
+		@core = Core.new("nebulavisum:nebulavisum", "http://localhost:2633/RPC2")
 	end
 
 	def start()
