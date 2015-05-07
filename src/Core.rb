@@ -87,7 +87,8 @@ class Core
 			else
 				DataBase.insertUser(vn.id.to_s, user)
 			end
-			user_id = getData("UserId", "Users", "Name = \"" + user + "\"").first["UserId"]
+			rs_user = DataBase.getData("UserId, NetworkId", "Users", "Name = \"" + user + "\"")
+			user_id = rs_user.first["UserId"]
 			puts("Created user...")
 		else
 			vn_id = rs.first["NetworkId"]
@@ -126,32 +127,35 @@ class Core
 
 		#CRIA TEMPLATE
 		puts("Criando template ONE..")
-		template = "NAME = \"" + user + "_" + imageId.to_s + "\"\n"
-		template += "MEMORY = \"" + hash["mem"].to_s + "\"\n"
-		template += "CPU = \"" + hash["cpu"].to_s + "\"\n"
-		template += "ARCH = \"x86_64\" \n"
-		template += "NIC = [ NETWORK_ID = \"" + vn_id.to_s + "\" ]\n"
-		template += "IMAGE = [ IMAGE_ID = \"" + img.id.to_s + "\" ]\n"
+		template_des = "NAME = \"" + user + "_" + imageId.to_s + "\"\n"
+		template_des += "MEMORY = \"" + hash["mem"].to_s + "\"\n"
+		template_des += "CPU = \"" + hash["cpu"].to_s + "\"\n"
+		template_des += "ARCH = \"x86_64\" \n"
+		template_des += "NIC = [ NETWORK_ID = \"" + vn_id.to_s + "\" ]\n"
+		template_des += "IMAGE = [ IMAGE_ID = \"" + img.id.to_s + "\" ]\n"
 		
-		puts template
+		puts template_des
 		
 		xml_template = OpenNebula::Template.build_xml
-		puts 1
 		template = OpenNebula::Template.new(xml_template, @oneClient)
-		puts 2
-		rc_template = template.allocate(template)
-		puts 3
+		rc_template = template.allocate(template_des)
 		name = '""'
-		if OpenNebula.is_error?(rc_vn)
+		if OpenNebula.is_error?(rc_template)
 			status = "ERR_CREATE_TEMPLATE"
-			puts 4
+			puts rc_template.message
+			puts rc_template.errno
 			DataBase.delImage(user)
-			puts 5
 		else
-			puts 6
 			name = user + '_' + imageId.to_s
-		puts 7
-			DataBase.insertTemplate(user_id, rc_template.id, name, hash["softwares"])
+			puts 1
+			puts user_id
+			puts 2
+			puts template.id
+			puts 3
+			puts name
+			puts 4
+			puts hash["softwares"]
+			DataBase.insertTemplate(user_id, template.id, name, hash["softwares"])
 		puts 8
 			status = "OK"
 		end

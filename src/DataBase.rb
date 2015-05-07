@@ -27,7 +27,9 @@ class DataBase
 	end
 
 	def DataBase.insertTemplate(userId, nebulaId, name, softwares)
+		puts "IN"
 		string = "INSERT INTO Templates VALUES(NULL," + userId.to_s + "," + nebulaId.to_s + ",'" + name.to_s + "')"
+		puts string
 		@@db.execute(string)
 		rs = DataBase.getData("TemplateId", "Templates", "name = '" + name.to_s + "'")
 		templateId = rs.first["TemplateId"]
@@ -53,6 +55,7 @@ class DataBase
 
 	def DataBase.insertSoftware(templateId, software)
 		string = "INSERT INTO Softwares VALUES(NULL, " + templateId.to_s + ",'" + software.to_s + "')"
+		puts string
 		@@db.execute(string)
 	end
 
