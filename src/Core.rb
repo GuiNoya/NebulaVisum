@@ -167,39 +167,39 @@ class Core
 	end
 
 	def createVM(hash)
-		
 		rs = DataBase.getData("TemplateId, UserId, NebulaId, Name", "Templates", "Name = \"" + hash["templateId"] + '"')
 		vms = []
-		
-		if (rs.first)
-			rs.each do |row|
-				templateId = row["TemplateId"]
-				userId = row["UserId"]
-				nebulaId = row["NebulaId"]
-				templateName = row["Name"]
-			end
-			
+		hash_rs = rs.first
+		if (hash_rs)			
+			puts hash_rs
+			#rs.first.each_pair do |row|
+			templateId = hash_rs["TemplateId"]
+			userId = hash_rs["UserId"]
+			nebulaId = hash_rs["NebulaId"]
+			templateName = hash_rs["Name"]
+
+			#end
 			xml = OpenNebula::Template.build_xml(nebulaId)
 			template = OpenNebula::Template.new(xml, @oneClient)
-			
 			qty = hash["qty"]
-			
+
 			status = "OK"
 			for _ in 1..qty
 				vmId = template.instantiate
 				if (OpenNebula.is_error?(vmId))
+					puts  vmId.message
+					puts vmId.errno
 					status = "ERR_COULD_NOT_INSTANTIATE"
 					break
 				else
 					vms << vmId
-					DataBase.insertVm(userId, templateId, vmId, templateName + "_" + vmId)
+					DataBase.insertVm(userId, templateId, vmId, templateName + "_" + vmId.to_s)
 				end
 			end
 			
 		else
 			status = "ERR_INVALID_TEMPLATE"
 		end
-		
 		response = '{"createVM":'
 		response += '{"VMs":' + vms.to_s
 		response += ', "status":"' + status + '"}'
@@ -207,28 +207,34 @@ class Core
 	end
 
 	def infoVM(hash)
-		
-		rs = DataBase.getData("s.Software, v.NebulaId", "Softwares s, VMs v", "v.VMId = \"" + hash["VMId"] + "\" AND v.TemplateId = s.TemplateId")
-		vmId = rs.first["v.NebulaId"]
+		rs = DataBase.getData("s.Software, v.NebulaId", "Softwares s, VMs v", "v.Name = \"" + hash["VMId"] + "\" AND v.TemplateId = s.TemplateId")
 		softwares = "[ "
+		vmId = ""
 		rs.each do |row|
-			softwares += '"' + row["s.Software"] + '",'
+			vmId = row["NebulaId"]
+			softwares += '"' + row["Software"] + '",'
 		end
 		softwares[softwares.length-1] = "]"
-		
 		xml = OpenNebula::VirtualMachine.build_xml(vmId)
 		vm = OpenNebula::VirtualMachine.new(xml, @oneClient)
 		vm.info # Returns nilClass if succeeded
 		info = vm.to_hash["VM"]
-		
 		status = "OK"
 		statusVM = vm.state_str
 		hd = info["TEMPLATE"]["DISK"]["SIZE"]
 		mem = info["TEMPLATE"]["MEMORY"]
 		cpu = info["TEMPLATE"]["CPU"]
 		ip = info["TEMPLATE"]["NIC"]["IP"]
-		mask = info["TEMPLATE"]["CONTEXT"]["ETH0_MASK"]
-		network = info["TEMPLATE"]["CONTEXT"]["ETH0_NETWORK"]
+		
+		xml = OpenNebula::VirtualNetwork.build_xml(info["TEMPLATE"]["NIC"]["NETWORK_ID"])
+		vm = OpenNebula::VirtualNetwork.new(xml, @oneClient)
+		vm.info # Returns nilClass if succeeded
+
+		info = vm.to_hash["VNET"]
+		mask = info["TEMPLATE"]["NETWORK_MASK"]
+
+		#network = info["TEMPLATE"]["CONTEXT"]["ETH0_NETWORK"]
+		network = info["TEMPLATE"]["NETWORK_ADDRESS"]
 		mask_octets = mask.split('.').map(&:to_i)
 		net_octets = network.split('.').map(&:to_i)
 		broadcast = []
@@ -237,13 +243,8 @@ class Core
 		broadcast << 7.downto(0).map{|n| (net_octets[2] | ~mask_octets[2])[n]}.join.to_i(2)
 		broadcast << 7.downto(0).map{|n| (net_octets[3] | ~mask_octets[3])[n]}.join.to_i(2)
 		broadcast = broadcast.join(".")
-		
-		xml = OpenNebula::VirtualNetwork.build_xml(info["TEMPLATE"]["NIC"]["NETWORK_ID"])
-		vm = OpenNebula::VirtualNetwork.new(xml, @oneClient)
-		vm.info # Returns nilClass if succeeded
-		info = vm.to_hash["VNET"]
-		gateway = info["GATEWAY"]
-		
+
+		gateway = info["TEMPLATE"]["GATEWAY"]
 		response = '{"infoVM":'
 		response += '{"status":"' + status + '"'
 		response += '{"statusVM:"' + statusVM + '"' # vm.status | vm.state_str
@@ -262,22 +263,27 @@ class Core
 	end
 
 	def myVMs(hash)
+		puts 1
 		where = "Users.Name = \"" + hash["userId"] + '"'
+		puts 2
 		where += " AND Users.UserId = VMs.UserId"
+		puts 3
 		rs = DataBase.getData("VMs.Name", "Users, VMs", where)
-
+		puts 4
 		status = "OK"
-
+		puts 5
 		vms = "[ "
+		puts 6
 		rs.each do |row|
-			vms += "'" + row["VMs.Name"] + "'"
-			vms += ","
+			puts row
+			vms += '"' + row["Name"] + '"'
+			vms += ','
 		end
-		vms[vms.length-1] = "]"
-	
+		vms[vms.length-1] = ']'
+		puts vms
 		response = '{"myVMs":'
 		response += '{"status":"' + status + '"'
-		response += ', "VMs":' + vms.to_s + '}'
+		response += ', "VMs":' + vms + '}'
 		response += '}'
 	end
 
@@ -288,17 +294,17 @@ class Core
 
 		status = "OK"
 
-		templates = "[ "
+		templates = '[ '
 		rs.each do |row|
-			templates += "'" + row["Templates.Name"] + "'"
-			templates += ","
+			templates += '"' + row["Name"] + '"'
+			templates += ','
 		end
-		templates[templates.length-1] = "]"
+		templates[templates.length-1] = ']'
 
 		#TRATAR STATUS
 	
 		response = '{"myTemplates":'
-		response += '{"templates":' + templates.to_s
+		response += '{"templates":' + templates
 		response += ', "status":"' + status + '"}'
 		response += '}'
 	end

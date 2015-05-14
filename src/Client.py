@@ -40,11 +40,11 @@ class Client:
         return self.send(request)
 
     def myVMs(self, userId):
-        request = '{"myMVs":{"userId":' + str(userId) + '}}\n'
+        request = '{"myVMs":{"userId":"' + str(userId) + '"}}\n'
         return self.send(request)
 
     def myTemplates(self, userId):
-        request = '{"mytemplates":{"userId":"' + str(userId) +'"}}\n'
+        request = '{"myTemplates":{"userId":"' + str(userId) +'"}}\n'
         return self.send(request)
 
     def actionVM(self, VMId, action):

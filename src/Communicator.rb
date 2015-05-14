@@ -23,13 +23,19 @@ class Communicator
 				begin
 					parsed = JSON.parse(string)
 				rescue
+					puts string
 					client.puts("ERR_INVALID_JSON")
 					client.close
 					Thread.exit
 				end
 				parsed.each_pair do |key, value|
-					response = eval("core." + key + "(value)")
-					client.puts(response)
+					begin
+						response = eval("core." + key + "(value)")
+						client.puts(response)
+					rescue Exception => e
+						puts e.message
+						puts e.backtrace.inspect
+					end
 				end
 				client.close
 			end

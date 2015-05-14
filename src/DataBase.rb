@@ -44,7 +44,7 @@ class DataBase
 	end
 
 	def DataBase.insertVm(userId, templateId, nebulaId, name)
-		string = "INSERT INTO VMs VALUES(NULL," + userId + "," + templateId + "," + nebulaId + ",'" + name + "')"
+		string = "INSERT INTO VMs VALUES(NULL," + userId.to_s + "," + templateId.to_s + "," + nebulaId.to_s + ",'" + name + "')"
 		@@db.execute(string)
 	end
 
@@ -66,6 +66,7 @@ class DataBase
 
 	def DataBase.getData(select, from, where = '1')
 		string = "SELECT " + select + " FROM " + from + " WHERE " + where
+		puts string
 		stmt = @@db.prepare(string)
 		rs = stmt.execute
 		return rs
